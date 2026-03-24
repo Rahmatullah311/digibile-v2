@@ -102,7 +102,12 @@ export function ProductListView() {
   }, [tableData]);
 
   const handleDeleteRows = useCallback(() => {
-    setTableData((prev) => prev.results.filter((row) => !selectedRows.ids.has(row.id)));
+    setTableData((prev) => {
+      if (Array.isArray(prev)) {
+        return prev.filter((row) => !selectedRows.ids.has(row.id));
+      }
+      return { ...prev, results: (prev.results || []).filter((row) => !selectedRows.ids.has(row.id)) };
+    });
     toast.success('Delete success!');
   }, [selectedRows.ids]);
 
@@ -169,7 +174,7 @@ export function ProductListView() {
             {...toolbarOptions.settings}
             checkboxSelection
             disableRowSelectionOnClick
-            rows={dataFiltered.results}
+            rows={Array.isArray(dataFiltered) ? dataFiltered : dataFiltered?.results ?? []}
             columns={columns}
             loading={productsLoading}
             getRowHeight={() => 'auto'}
@@ -190,7 +195,7 @@ export function ProductListView() {
                 <ProductTableToolbar
                   filters={filters}
                   canReset={canReset}
-                  filteredResults={dataFiltered.length}
+                  filteredResults={Array.isArray(dataFiltered) ? dataFiltered.length : dataFiltered?.results?.length ?? 0}
                   selectedRowCount={selectedRows.ids.size}
                   onOpenConfirmDeleteRows={confirmDialog.onTrue}
                   options={{ stocks: PRODUCT_STOCK_OPTIONS, publishs: PUBLISH_OPTIONS }}
@@ -356,13 +361,17 @@ const useGetColumns = ({ onDeleteRow }) => {
 function applyFilter({ inputData, filters }) {
   const { stock, publish } = filters;
 
-  if (stock.length) {
-    inputData = inputData.filter((product) => stock.includes(product.inventoryType));
+  // Support both array input and paginated object with a `results` array
+  const isArrayInput = Array.isArray(inputData);
+  let results = isArrayInput ? inputData : (inputData?.results ?? []);
+
+  if (stock?.length) {
+    results = results.filter((product) => stock.includes(product.inventoryType));
   }
 
-  if (publish.length) {
-    inputData = inputData.filter((product) => publish.includes(product.publish));
+  if (publish?.length) {
+    results = results.filter((product) => publish.includes(product.publish));
   }
 
-  return inputData;
+  return isArrayInput ? results : { ...inputData, results };
 }

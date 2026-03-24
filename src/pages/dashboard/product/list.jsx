@@ -1,7 +1,6 @@
 import { CONFIG } from 'src/global-config';
 
 import { ProductListView } from 'src/sections/product/view';
-
 // ----------------------------------------------------------------------
 
 const metadata = { title: `Product list | Dashboard - ${CONFIG.appName}` };
