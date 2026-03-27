@@ -78,10 +78,15 @@ export const useUpdateStore = (id) => {
   };
 };
 
-const deleteStoreRequest = async (url, { arg }) => apiRequest('DELETE', url, arg);
+const deleteStoreRequest = async (url, { arg }) => {
+  const { id } = arg;
+  const finalUrl = endpoints.store.details(id);
+  const result = await apiRequest('DELETE', finalUrl);
+  return result;
+};
 
-export const useDeleteStore = (id) => {
-  const url = endpoints.store.details(id);
+export const useDeleteStore = () => {
+  const url = endpoints.store.details;
 
   const { trigger, data, error, isMutating } = useSWRMutation(url, deleteStoreRequest);
 
