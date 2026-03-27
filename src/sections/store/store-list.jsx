@@ -18,8 +18,7 @@ import { RouterLink } from 'src/routes/components';
 import { useServerPagination } from 'src/hooks/useServerPagination';
 
 import { endpoints } from 'src/lib/axios';
-import { useGetStores } from 'src/actions/dashboard/store';
-import { useDeleteUser } from 'src/actions/dashboard/user';
+import { useGetStores, useDeleteStore } from 'src/actions/dashboard/store';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -40,26 +39,31 @@ const StoreList = () => {
     console.debug('paginationModel', paginationModel);
   }, [paginationModel]);
 
-  const requestDeleteUser = (userId) => {
-    setConfirmDelete({ open: true, id: userId });
+  const requestDeleteStore = (storeId) => {
+    setConfirmDelete({ open: true, id: storeId });
   };
-  const handleDeleteUser = async () => {
+  const handleDeleteStore = async () => {
     try {
-      await deleteUser({ id: confirmDelete.id });
-      if (deleteUserError) {
-        toast.error(deleteUserError.message);
-      } else {
-        toast.success('User deleted successfuly');
-        mutate(endpoints.user.list);
-        setConfirmDelete({ open: false, id: null });
-      }
+      await deleteStore(
+        { id: confirmDelete.id },
+        {
+          onSuccess: () => {
+            toast.success('Store deleted successfuly');
+            mutate(endpoints.store.list);
+            setConfirmDelete({ open: false, id: null });
+          },
+          onError: (error) => {
+            toast.error(error.message);
+          },
+        }
+      );
     } catch (error) {
       toast.error(error.message);
     }
   };
 
-  const columns = useGetColumns({ onDeleteRow: requestDeleteUser });
-  const { deleteUser, deleteUserLoading, deleteUserError } = useDeleteUser();
+  const columns = useGetColumns({ onDeleteRow: requestDeleteStore });
+  const { deleteStore, deleteStoreLoading, deleteStoreData } = useDeleteStore();
 
   const renderConfirmDialog = () => (
     <ConfirmDialog
@@ -69,10 +73,10 @@ const StoreList = () => {
       content="Are you sure want to delete?"
       action={
         <LoadingButton
-          loading={deleteUserLoading}
+          loading={deleteStoreLoading}
           variant="contained"
           color="error"
-          onClick={handleDeleteUser}
+          onClick={handleDeleteStore}
         >
           Delete
         </LoadingButton>
@@ -92,14 +96,13 @@ const StoreList = () => {
     date_joined_to: '',
   });
   const onFilterChange = (newFilters) => {
-    console.debug('newFilters from users Table: ', newFilters);
     setFilter((prev) => ({
       ...prev,
       ...newFilters,
     }));
   };
 
-  const { stores, storesErrors, storesIsLoading, mutateStores } = useGetStores({
+  const { stores, storesIsLoading, mutateStores } = useGetStores({
     page,
     page_size: pageSize,
     filters,
@@ -108,7 +111,7 @@ const StoreList = () => {
   useEffect(() => {
     mutateStores();
     console.debug('filters', filters);
-  }, [filters, page, pageSize, mutateStores]);
+  }, [filters, page, pageSize, mutateStores, deleteStoreData]);
 
   return (
     <Card
@@ -145,7 +148,7 @@ const useGetColumns = ({ onDeleteRow }) => {
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
 
   const columns = useMemo(() => {
-    const USER_STATUS_COLORS = {
+    const STORE_STATUS_COLORS = {
       pending: 'warning',
       active: 'success',
       rejected: 'default', // you can pick 'error' if you prefer
@@ -193,7 +196,6 @@ const useGetColumns = ({ onDeleteRow }) => {
                 />
                 <Link
                   component={RouterLink}
-                  // href={paths.dashboard.user.account(params.row.id)}
                   color="inherit"
                   sx={{
                     typography: 'body2',
@@ -300,7 +302,7 @@ const useGetColumns = ({ onDeleteRow }) => {
         filterable: false,
         disableColumnMenu: true,
         renderCell: (params) => (
-          <Label variant="soft" color={USER_STATUS_COLORS[params.row.status] || 'default'}>
+          <Label variant="soft" color={STORE_STATUS_COLORS[params.row.status] || 'default'}>
             {params.row.status}
           </Label>
         ),
@@ -344,7 +346,7 @@ const useGetColumns = ({ onDeleteRow }) => {
             label="Delete"
             icon={<Iconify icon="solar:trash-bin-trash-bold" />}
             href={paths.dashboard.store.list}
-            // onClick={() => onDeleteRow(params.row.id)}
+            onClick={() => onDeleteRow(params.row.id)}
             sx={{ color: theme.vars.palette.error.main }}
           />,
         ],
