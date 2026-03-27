@@ -77,3 +77,18 @@ export const useUpdateStore = (id) => {
     updateStoreLoading: isMutating,
   };
 };
+
+const deleteStoreRequest = async (url, { arg }) => apiRequest('DELETE', url, arg);
+
+export const useDeleteStore = (id) => {
+  const url = endpoints.store.details(id);
+
+  const { trigger, data, error, isMutating } = useSWRMutation(url, deleteStoreRequest);
+
+  return {
+    deleteStore: trigger,
+    deleteStoreData: data,
+    deleteStoreError: error,
+    deleteStoreLoading: isMutating,
+  };
+};
